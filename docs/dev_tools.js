@@ -61,7 +61,7 @@ class DevTools {
     window.addEventListener('load', _ => {
       Common.settings.createSetting('timelineCaptureFilmStrip', true).set(true);
 
-      this.monkepatchSetWindowPosition();
+      this.monkeyPatchSetWindowPosition();
       this.monkeyPatchRequestWindowTimes();
       this.monkeypatchTimelineFeatures();
       this.monkeyPatchWindowChanged();
@@ -93,9 +93,9 @@ class DevTools {
     });
   }
 
-  monkepatchSetWindowPosition() {
+  monkeyPatchSetWindowPosition() {
     const viewerInstance = this.viewerInstance;
-    const plzRepeat = _ => setTimeout(_ => this.monkepatchSetWindowPosition(), 100);
+    const plzRepeat = _ => setTimeout(_ => this.monkeyPatchSetWindowPosition(), 100);
     if (typeof PerfUI === 'undefined' || typeof PerfUI.OverviewGrid === 'undefined' ) return plzRepeat();
 
     PerfUI.OverviewGrid.Window.prototype._setWindowPosition = function(start, end) {
@@ -146,7 +146,7 @@ class DevTools {
     }
   }
 
-  monkeypatchLoadResourcePromise() {
+  monkeyPatchLoadResourcePromise() {
     this.viewerInstance._orig_loadResourcePromise = Runtime.loadResourcePromise;
     Runtime.loadResourcePromise = this.viewerInstance.loadResource.bind(this.viewerInstance);
   }
@@ -155,18 +155,16 @@ class DevTools {
     // todo add detection for correct panel in split view
     // todo sync traces after dropping file
     if (window.Timeline && window.Timeline.TimelinePanel) {
-      const viewerInstance = this.viewerInstance;
       const timelinePanel = Timeline.TimelinePanel.instance();
       const dropTarget = timelinePanel._dropTarget;
       const handleDrop = dropTarget._handleDrop;
       dropTarget._handleDrop = function(...args) {
-        viewerInstance.toggleUploadToDriveElem(viewerInstance.canUploadToDrive);
         handleDrop.apply(dropTarget, args);
       };
     }
   }
 
-  monkepatchSetMarkers() {
+  monkeyPatchSetMarkers() {
     const panel = Timeline.TimelinePanel.instance();
     const oldSetMarkers = panel._setMarkers;
     panel._setMarkers = function() {
