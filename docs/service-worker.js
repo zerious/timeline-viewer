@@ -37,7 +37,7 @@
 /* eslint-disable indent, no-unused-vars, no-multiple-empty-lines, max-nested-callbacks, space-before-function-paren, quotes, comma-spacing */
 'use strict';
 
-var precacheConfig = [["Images/toolbarButtonGlyphs.png","d71330d9fb3d9263767c817a5b341fd3"],["dev_tools.js","d4636e4fba81cdc6e8ed1a93e73068d4"],["index.html","e75f280876396a1c3d51cb86a91cff05"],["styles.css","24426beba149ca217d970aa357ae8240"],["sync_view.js","7f06cf2288c937edd696062efab75ff9"],["timeline_viewer.js","f3e1f859aaf04166bb59adba323d2c55"],["utils.js","945b5e5b3d2a1738a1923f0ce327dea5"]];
+var precacheConfig = [["Images/toolbarButtonGlyphs.png","d71330d9fb3d9263767c817a5b341fd3"],["dev_tools.js","911abd299a2b9e57b983ce0d102dc570"],["index.html","638ab9896a796bc79cd30d7c28e6399e"],["styles.css","64795b119957e7119e9ad9c780d25cf9"],["sync_view.js","7f06cf2288c937edd696062efab75ff9"],["timeline_viewer.js","b76bd93864f86577d2c4e7c868ace37e"],["utils.js","945b5e5b3d2a1738a1923f0ce327dea5"]];
 var cacheName = 'sw-precache-v3-sw-precache-' + (self.registration ? self.registration.scope : '');
 
 
@@ -176,10 +176,10 @@ self.addEventListener('install', function(event) {
         );
       });
     }).then(function() {
-
+      
       // Force the SW to transition from installing -> active state
       return self.skipWaiting();
-
+      
     })
   );
 });
@@ -199,9 +199,9 @@ self.addEventListener('activate', function(event) {
         );
       });
     }).then(function() {
-
+      
       return self.clients.claim();
-
+      
     })
   );
 });
@@ -262,7 +262,7 @@ self.addEventListener('fetch', function(event) {
 
 
 // *** Start of auto-included sw-toolbox code. ***
-/*
+/* 
  Copyright 2016 Google Inc. All Rights Reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
