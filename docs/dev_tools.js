@@ -61,14 +61,14 @@ class DevTools {
     window.addEventListener('load', _ => {
       Common.settings.createSetting('timelineCaptureFilmStrip', true).set(true);
 
-      this.monkepatchSetWindowPosition();
+      this.monkeyPatchSetWindowPosition();
       this.monkeyPatchRequestWindowTimes();
-      this.monkeypatchTimelineFeatures();
+      this.monkeyPatchTimelineFeatures();
       this.monkeyPatchWindowChanged();
     });
   }
 
-  monkeypatchTimelineFeatures() {
+  monkeyPatchTimelineFeatures() {
     // Instead of gray for unknown events, color them by event name.
     UI.inspectorView.showPanel('timeline').then(_ => {
       // Hue: all but red, Saturation: 15-35%, Lightness: 75%, Alpha: opaque
@@ -93,9 +93,9 @@ class DevTools {
     });
   }
 
-  monkepatchSetWindowPosition() {
+  monkeyPatchSetWindowPosition() {
     const viewerInstance = this.viewerInstance;
-    const plzRepeat = _ => setTimeout(_ => this.monkepatchSetWindowPosition(), 100);
+    const plzRepeat = _ => setTimeout(_ => this.monkeyPatchSetWindowPosition(), 100);
     if (typeof PerfUI === 'undefined' || typeof PerfUI.OverviewGrid === 'undefined' ) return plzRepeat();
 
     PerfUI.OverviewGrid.Window.prototype._setWindowPosition = function(start, end) {
@@ -146,7 +146,8 @@ class DevTools {
     }
   }
 
-  monkeypatchLoadResourcePromise() {
+  monkeyPatchLoadResourcePromise() {
+    console.log(Runtime.loadResourcePromise);
     this.viewerInstance._orig_loadResourcePromise = Runtime.loadResourcePromise;
     Runtime.loadResourcePromise = this.viewerInstance.loadResource.bind(this.viewerInstance);
   }
@@ -166,7 +167,7 @@ class DevTools {
     }
   }
 
-  monkepatchSetMarkers() {
+  monkeyPatchSetMarkers() {
     const panel = Timeline.TimelinePanel.instance();
     const oldSetMarkers = panel._setMarkers;
     panel._setMarkers = function() {
