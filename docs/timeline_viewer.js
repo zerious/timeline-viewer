@@ -12,15 +12,12 @@ class Viewer {
     this.timelineURL = this.params.get('loadTimelineFromURL');
     this.timelineId = null;
     this.timelineProvider = 'url';
-    console.log(this.timelineURL);
 
     this.totalSize = 50 * 1000 * 1000;
     this.loadingStarted = false;
     this.refreshPage = false;
     // remote location of devtools we're using
     this.devtoolsBase = document.getElementById('devtoolsscript').src.replace(/inspector\.js.*/, '');
-    this.statusElem = document.getElementById('status');
-    this.utils = new Utils();
     this.devTools = new DevTools({viewerInstance: this});
 
     if (!this.timelineURL || this.startSplitViewIfNeeded(this.timelineURL)) {
@@ -28,10 +25,6 @@ class Viewer {
       this.isSplitView = this.splitViewContainer ? true : false;
       this.handleDragEvents();
     }
-
-    // Start loading DevTools.
-    this.statusElem.hidden = false;
-
     this.devTools.init();
     this.makeDevToolsVisible(true);
   }
@@ -40,9 +33,6 @@ class Viewer {
     e.stopPropagation();
     e.preventDefault();
     this.makeDevToolsVisible(true);
-    UI.inspectorView.showPanel('timeline').then(_ => {
-      // TODO
-    });
   }
 
   startSplitViewIfNeeded(urls) {
@@ -72,10 +62,6 @@ class Viewer {
     document.documentElement.classList[bool ? 'remove' : 'add']('hide-devtools');
   }
 
-  updateStatus(str) {
-    this.statusElem.textContent = str;
-  }
-
   loadResource(requestedURL) {
     return this.loadResourcePromise(requestedURL)
       .then(resp => {
@@ -102,51 +88,59 @@ class Viewer {
       return this._orig_loadResourcePromise(url);
     }
 
-    return this.fetchTimelineAsset(url.href).then(payload => payload);
+    return this.fetchTimelineAsset(url.href);
   }
 
-  fetchTimelineAsset(url, addRequestHeaders = Function.prototype, method = 'GET', body) {
+  fetchTimelineAsset(url) {
     this.netReqMuted = false;
     this.loadingStarted = false;
-    return this.utils.fetch(url, {
-      url, addRequestHeaders: addRequestHeaders.bind(this), method, body,
-      onprogress: this.updateProgress.bind(this),
-    }, true)
-      .then(xhr => {
-        if (this.isSplitView) {
-          return this.syncView.splitViewTimelineLoaded()
-            .then(_ => SyncView.synchronizeRange(SyncView.panels()[0], this.syncView))
-            .then(_ => xhr.responseText);
-        } else {
-          return xhr.responseText;
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200 || xhr.status === 304) {
+            resolve(xhr.responseText);
+          }
         }
-      })
-      .catch(({error, xhr}) => {
-        this.makeDevToolsVisible(false);
-        this.updateStatus('Download of asset failed. ' + ((xhr.readyState == xhr.DONE) ? 'CORS headers likely not applied.' : ''));
-        console.warn('Download of asset failed', error);
-      });
+      };
+      xhr.onerror = event => {
+        window.xhrEvent = event;
+        this.showPanel(panel => {
+          window.timelinePanel = panel;
+        });
+      };
+      xhr.onprogress = this.updateProgress.bind(this);
+      xhr.open('GET', url);
+      xhr.send();
+    });
   }
 
-  updateProgress(evt) {
+  showPanel(fn) {
     try {
       UI.inspectorView.showPanel('timeline').then(_ => {
         const panel = Timeline.TimelinePanel.instance();
-        // start progress
-        if (!this.loadingStarted) {
-          this.loadingStarted = true;
-          panel && panel.loadingStarted();
-        }
-
-        // update progress
-        panel && panel.loadingProgress(evt.loaded / (evt.total || this.totalSize));
-
-        // flip off filmstrip or network if theres no data in the trace
-        if (!this.netReqMuted) {
-          this.netReqMuted = true;
-          this.devTools.monkeyPatchSetMarkers();
-        }
+        fn.call(this, panel);
       });
     } catch (e) {}
+  }
+
+  updateProgress(evt) {
+    this.showPanel(panel => {
+      // start progress
+      if (!this.loadingStarted) {
+        this.loadingStarted = true;
+        panel && panel.loadingStarted();
+      }
+
+      // update progress
+      panel && panel.loadingProgress(evt.loaded / (evt.total || this.totalSize));
+
+      // flip off filmstrip or network if theres no data in the trace
+      if (!this.netReqMuted) {
+        this.netReqMuted = true;
+        this.devTools.monkeyPatchSetMarkers();
+      }
+    });
   }
 }
